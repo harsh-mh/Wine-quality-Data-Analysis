@@ -1,0 +1,338 @@
+---
+title: "Wine Quality Data"
+author: "Harsh Mehta"
+date: "2022-11-30"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+## Exploring the Data
+
+```{r include=FALSE}
+df <-read.csv("C:\\Users\\91797\\Downloads\\Wine Quality Data.csv")
+library(dplyr)
+library(tidyverse)
+```
+
+```{r}
+str(df)
+head(df)
+```
+
+The df data frame consist of 6465 Columns and 15 Rows
+
+-   type
+
+-   fixed acidity
+
+-   volatile acidity
+
+-   citric acid
+
+-   residual sugar
+
+-   chlorides
+
+-   free sulfur dioxide
+
+-   total sulfur dioxide
+
+-   density
+
+-   pH
+
+-   sulphates
+
+-   alcohol
+
+-   quality
+
+-   Bill Of Materials(Cost for Making the wine)
+
+-   Cost of storage
+
+-   Price
+
+## **Cleaning the Data**
+
+The Data frame 'df' consist tibbles with the value '0'. To get rid of this data we will use `na.omit()` Function. The new data frame now only consists of 6308 row.
+
+```{r}
+df[df == 0] <- NA
+winequality<-na.omit(df)
+dim(winequality)
+```
+
+To understand the data more clearly we will add Two more columns to the data Indicating Profit and Total Cost
+
+```{r}
+total_cost <- winequality$BillOfMaterials + winequality$StorageCost  
+winequality <- winequality %>%
+  add_column(total_cost)
+
+profit <- winequality$Price -winequality$total_cost
+winequality <- winequality %>%
+  add_column(profit)
+```
+
+#### Questions
+
+Q1 -\> What is the difference between different types of wines?
+
+Q2 -\> What are the costs and different attributes of that cost?
+
+Q3 -\> What determines the quality and what does the ideal wine look like?
+
+Q4 -\> What factors determines the price/profit of the wine and what is the percentage of the profit generated?
+
+Q5 -\> Is there any Correlation between different attributes of the wines?
+
+#### Q1 -\> What is the difference between different types of wines?
+
+```{r echo=TRUE}
+library("ggthemes")
+library("gridExtra")
+library(ggplot2)
+g1 <- ggplot(winequality) +
+  aes(x = type, y = alcohol, fill = type) +
+  geom_bar(position="dodge",stat="summary",fun="mean") +
+  
+  labs(title = "Average Alcohol in diifrent types of wine",
+       x = "type", y = "Mean alcohol")+
+  theme_economist()
+
+g2 <-  ggplot(winequality) +
+  aes(x = type, y = pH, fill = type) +
+  geom_bar(position="dodge",stat="summary",fun="mean") +
+  
+  labs(title = "Average pH in diifrent types of wine",
+       x = "type", y = "Mean pH")+
+  theme_economist()
+
+g3 <- ggplot(winequality) +
+  aes(x = type, y = fixed.acidity, fill = type) +
+  geom_bar(position="dodge",stat="summary",fun="mean") +
+  
+  labs(title = "Average acidity in diifrent types of wine",
+       x = "type", y = "Mean acidity")+
+  theme_economist()
+
+g4 <- ggplot(winequality) +
+  aes(x = type, y = residual.sugar, fill = type) +
+  geom_bar(position="dodge",stat="summary",fun="mean") +
+  
+  labs(title = "Average sugar in diifrent types of wine",
+       x = "type", y = "Mean sugar")+
+  theme_economist()
+
+g5 <- ggplot(winequality) +
+  aes(x = type, y = quality, fill = type) +
+  geom_bar(position="dodge",stat="summary",fun="mean") +
+  
+  labs(title = "Average quality diifrent types of wine",
+       x = "type", y = "Mean quality")+
+  theme_economist()
+
+g6 <-ggplot(winequality) +
+  aes(x = type, y = sulphates, fill = type) +
+  geom_bar(position="dodge",stat="summary",fun="mean") +
+  
+  labs(title = "Average sulphates in diifrent types of wine",
+       x = "type", y = "Mean sulphates")+
+  theme_economist()
+
+g7 <-ggplot(winequality) +
+  aes(x = type, y = Price, fill = type, fill = type) +
+  geom_bar(position="dodge",stat="summary",fun="mean") +
+  
+  labs(title = "Average price of diifrent types of wine",
+       x = "type", y = "Mean price")+
+  theme_economist()
+g8 <-ggplot(winequality) +
+  aes(x = type, y = total_cost, fill = type) +
+  geom_bar(position="dodge",stat="summary",fun="median") +
+  
+  labs(title = "Median cost of diifrent types of wine",
+       x = "type", y = "Mean cost")+
+  theme_economist()
+
+```
+
+```{r}
+grid.arrange(g1, g2, ncol = 2)
+grid.arrange(g5, g6, ncol = 2)
+grid.arrange(g3, g4, ncol = 2)
+grid.arrange(g7, g8, ncol = 2)
+```
+
+By Studying the Average contents of Red and White Wine We can Conclude that:
+
+-   White wine contains more sugar then red wine
+
+-   Red wine contains more sulfates then the white wine
+
+-   Red wine is slightly more acidic in nature
+
+#### Q2 -\> What are the costs and different attributes of that cost?
+
+The total cost is based on the sum of of Bill of Materials and the Storage Cost. To explore this columns we will plot A histogram and will also see its probability density. The generic function `hist` computes a histogram of the given data values. `density()` function computes kernel density estimates.
+
+```{r}
+hist(winequality$BillOfMaterials,freq = FALSE, col=rgb( 1,.25,.25, .2))
+lines(density(winequality$BillOfMaterials), col="darkgoldenrod1", lwd=2)
+hist(winequality$StorageCost, freq = FALSE, col=rgb( 1,.25,.25, .2))
+lines(density(winequality$StorageCost), col="darkgoldenrod1")
+
+```
+
+We will see the Correlation of the attributes and find out what factors affect the cost. `corr_var()`function correlates a whole dataframe with a single feature. It automatically runs `ohse` (one-hot-smart-encoding) so no need to input only numerical values.
+
+```{r}
+library('lares')
+corr_var(winequality, 
+         BillOfMaterials, 
+)
+corr_var(winequality, 
+         StorageCost
+)
+```
+
+-   Majority of the wines has the cost of ingredients from 500 to 700 rupees
+
+-   Majority of the wine has the storage cost of 225 to 325 rupees
+
+-   The major factor affecting the cost is the quality of the wine i.e the higher the rating of the wine, Higher its cost.
+
+#### Q3 -\> What determines the quality and what does the ideal wine look like?
+Lets Explore the quality of wine by type.
+```{r}
+ggplot(winequality, aes(x = as.factor(winequality$type))) +
+  geom_density(aes(fill = as.factor(quality)), alpha = 0.2)+  labs(x="Wine Color ", y= "Density")
+```
+
+We will see the Correlation of the attributes and find out what factors affects the quality.
+
+```{r}
+corr_var(winequality, 
+         quality)
+```
+
+Using `ggpolt()` we will plot some graphs to study the correlations.
+
+```{r}
+g9 <-ggplot(winequality, aes(x = alcohol, y = quality, col = type))+
+  geom_point(aes(shape = type))+
+  labs(title = "Alcohol VS Quality",
+          x = "Alcohol", y = "Quality")
+g9 + theme_economist()
+
+g10 <- ggplot(winequality, aes(winequality$Price, winequality$quality)) + labs(title = "Price VS Quality", x = "Price", y = "Quality") + geom_line(colour = "#0c4c8a", size = 2) + theme_economist()
+
+g11 <- ggplot(winequality, aes(winequality$total_cost, winequality$quality)) + labs(title = "Cost VS Quality",cx = "Cost", y = "Quality") + geom_line(colour = "#87728c", size = 2) + theme_economist()
+grid.arrange(g10, g11, ncol = 2)
+```
+
+We will make a different data frame with highest rated quality wine and observe it
+
+```{r}
+library(summarytools)
+max(winequality$quality)
+Ideal_Wine <- filter(winequality, winequality$quality == 9)
+Ideal_Wine_Summarry <- summarytools::descr(Ideal_Wine, round.digits = 2, transpose = TRUE)
+Ideal_Wine_Summarry
+```
+
+-   All the highest rated wines are white
+
+-   The price and cost of the highest rated wines are also very high
+
+#### Q4-\> What factors determines the price/profit of the wine and what is the percentage of the profit generated?
+
+We will see the Correlation of the attributes and find out what factors affect the price and profit.
+
+```{r}
+corr_var(winequality, 
+         Price)
+corr_var(winequality, 
+         profit)
+```
+
+Profit persent with the different attributes.
+
+```{r}
+Avereage_Profit_Persent <- mean(winequality$profit)*100/mean(winequality$Price)
+Avereage_Profit_Persent
+min_Profit_Persent <- min(winequality$profit)*100/mean(winequality$Price)
+min_Profit_Persent
+Max_Profit_Persent <- max(winequality$profit)*100/mean(winequality$Price)
+Max_Profit_Persent
+```
+
+We will now compute the top most profitable wine and analyze its summary and correlation
+
+```{r}
+Max_Profit<-slice_max(winequality, n = 10, winequality$profit)
+corr_var(Max_Profit, 
+         profit)
+Max_profit_Wine_Summarry <- summarytools::descr(Max_Profit, round.digits = 4, transpose = TRUE)
+Max_profit_Wine_Summarry
+```
+
+We will now compute least profitable wine and analyze its summary and correlation
+
+```{r}
+
+Min_Profit<-slice_min(winequality, n = 10, winequality$profit)
+corr_var(Min_Profit, 
+         profit)
+Min_profit_Wine_Summarry <- summarytools::descr(Min_Profit, round.digits = 4, transpose = TRUE)
+Min_profit_Wine_Summarry
+```
+
+-   The gross profit percent lies between 25% to 87%.
+
+-   The least profitable wines have a very high pH value.
+
+-   The factor affecting the price and profit most is quality.
+
+#### Q5-\> Is there any Correlation between different attributes of the wines?
+
+**`cov()`** form the variance-covariance matrix calculate the covariance of the numeric values . **`cor()`** forms the correlation matrix.
+The `unlist()` function and `lapply()` is used to select only numeric values from the data set.
+
+```{r}
+cov_matrix <- cov(winequality [,unlist(lapply(winequality, is.numeric))])
+cov_matrix
+
+cor_matrix <- cor(winequality[,unlist(lapply(winequality, is.numeric))])
+cor_matrix
+
+```
+
+To plot the correlation we will use `corrplot()` library.
+
+```{r}
+library(corrplot)
+corrplot(cor_matrix, method = 'color', order = 'alphabet')
+```
+
+As per the analysis we can concluded that the alcohol is inversely correlated to density. To dig deep into it we will only focus on correlation matrix of alcohol.
+
+The `lm()` function is used to fit linear models to data frames. After doing so we will also summarize it.
+
+```{r}
+alcohoal_density = lm(winequality$alcohol~winequality$density)
+summary(alcohoal_density)
+```
+
+Also we will plot a linear distribution graph to understand the distribution
+
+```{r}
+ggplot(winequality, aes(x = alcohol, y = density)) + geom_point() + geom_smooth(method = "lm")
+```
+
+-   The more the Alcohol contents the lesser the density of the alcohol
+
+-   There are few outlines in density column
